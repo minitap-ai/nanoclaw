@@ -29,6 +29,7 @@ import {
   stopContainer,
 } from './container-runtime.js';
 import { detectAuthMode } from './credential-proxy.js';
+import { readAllEnvVars } from './env.js';
 import { validateAdditionalMounts } from './mount-security.js';
 import { RegisteredGroup } from './types.js';
 
@@ -255,17 +256,23 @@ function buildContainerArgs(
     args.push('-e', 'CLAUDE_CODE_OAUTH_TOKEN=placeholder');
   }
 
-  // Pass through env vars listed in CONTAINER_ENV_PASSTHROUGH (comma-separated).
-  // These are read from .env and injected into agent containers so agents can
-  // access external APIs without exposing the full .env file.
-  const passthrough = process.env.CONTAINER_ENV_PASSTHROUGH;
-  if (passthrough) {
-    for (const key of passthrough.split(',').map((k) => k.trim()).filter(Boolean)) {
-      const value = process.env[key];
-      if (value) {
-        args.push('-e', `${key}=${value}`);
-      }
-    }
+  // Pass through non-sensitive env vars from .env to agent containers.
+  // Secrets (Anthropic keys, channel tokens) are blocked — they're handled
+  // by the credential proxy or are host-only. Everything else (external API
+  // keys, feature flags, config) is forwarded so agents can call external APIs.
+  const envPassthrough = readAllEnvVars();
+  const BLOCKED_ENV_PREFIXES = [
+    'ANTHROPIC_',
+    'CLAUDE_CODE_',
+    'SLACK_',
+    'WHATSAPP_',
+    'TELEGRAM_',
+    'DISCORD_',
+    'GMAIL_',
+  ];
+  for (const [key, value] of Object.entries(envPassthrough)) {
+    if (BLOCKED_ENV_PREFIXES.some((p) => key.startsWith(p))) continue;
+    args.push('-e', `${key}=${value}`);
   }
 
   // Runtime-specific args for host gateway resolution
