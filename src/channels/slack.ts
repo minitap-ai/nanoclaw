@@ -38,6 +38,7 @@ export class SlackChannel implements Channel {
   private outgoingQueue: Array<{ jid: string; text: string }> = [];
   private flushing = false;
   private userNameCache = new Map<string, string>();
+  private lastMessageTs = new Map<string, string>();
 
   private opts: SlackChannelOpts;
 
@@ -152,6 +153,11 @@ export class SlackChannel implements Channel {
         }
       }
 
+      // Track last user message timestamp for reaction-based typing indicator
+      if (!isBotMessage) {
+        this.lastMessageTs.set(jid, msg.ts);
+      }
+
       this.opts.onMessage(jid, {
         id: msg.ts,
         chat_jid: jid,
@@ -235,11 +241,32 @@ export class SlackChannel implements Channel {
     await this.app.stop();
   }
 
-  // Slack does not expose a typing indicator API for bots.
-  // This no-op satisfies the Channel interface so the orchestrator
-  // doesn't need channel-specific branching.
-  async setTyping(_jid: string, _isTyping: boolean): Promise<void> {
-    // no-op: Slack Bot API has no typing indicator endpoint
+  /**
+   * Simulate typing indicator via emoji reactions.
+   * Adds 👀 when processing starts, removes it when done.
+   */
+  async setTyping(jid: string, isTyping: boolean): Promise<void> {
+    const channelId = jid.replace(/^slack:/, '');
+    const lastTs = this.lastMessageTs.get(jid);
+    if (!lastTs) return;
+
+    try {
+      if (isTyping) {
+        await this.app.client.reactions.add({
+          channel: channelId,
+          timestamp: lastTs,
+          name: 'eyes',
+        });
+      } else {
+        await this.app.client.reactions.remove({
+          channel: channelId,
+          timestamp: lastTs,
+          name: 'eyes',
+        });
+      }
+    } catch {
+      // Ignore — reaction may already exist or be removed
+    }
   }
 
   /**
