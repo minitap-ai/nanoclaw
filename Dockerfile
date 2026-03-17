@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt
 WORKDIR /app
 
 COPY package*.json ./
-RUN HUSKY=0 npm ci
+RUN npm pkg delete scripts.prepare && npm ci
 
 COPY tsconfig.json ./
 COPY src/ ./src/
@@ -37,8 +37,8 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 COPY package*.json ./
-# HUSKY=0 skips the husky prepare hook while allowing native module compilation
-RUN HUSKY=0 npm ci --omit=dev
+# Override prepare script (husky not available in production) while keeping native compilation
+RUN npm pkg delete scripts.prepare && npm ci --omit=dev
 
 # Copy compiled output from builder
 COPY --from=builder /app/dist ./dist
