@@ -26,6 +26,7 @@ export interface SlackChannelOpts {
   onMessage: OnInboundMessage;
   onChatMetadata: OnChatMetadata;
   registeredGroups: () => Record<string, RegisteredGroup>;
+  registerGroup: (jid: string, group: RegisteredGroup) => void;
 }
 
 export class SlackChannel implements Channel {
@@ -90,9 +91,38 @@ export class SlackChannel implements Channel {
       // Always report metadata for group discovery
       this.opts.onChatMetadata(jid, timestamp, undefined, 'slack', isGroup);
 
-      // Only deliver full messages for registered groups
+      // Auto-register channels when bot is @mentioned in an unregistered channel.
+      // This lets the bot grow with the Slack workspace — just invite it and @mention.
       const groups = this.opts.registeredGroups();
-      if (!groups[jid]) return;
+      if (!groups[jid]) {
+        const isBotMentioned =
+          this.botUserId && msg.text?.includes(`<@${this.botUserId}>`);
+        const isDM = msg.channel_type === 'im';
+        if (!isBotMentioned && !isDM) return;
+
+        // Resolve name for the folder — channel name for groups, user name for DMs
+        const displayName = isDM
+          ? (msg.user ? await this.resolveUserName(msg.user) : undefined)
+          : await this.resolveChannelName(msg.channel);
+        const safeName = (displayName || msg.channel)
+          .toLowerCase()
+          .replace(/[^a-z0-9-]/g, '-')
+          .replace(/-+/g, '-')
+          .slice(0, 50);
+        const folder = isDM ? `slack_dm-${safeName}` : `slack_${safeName}`;
+
+        this.opts.registerGroup(jid, {
+          name: displayName || msg.channel,
+          folder,
+          trigger: `@${ASSISTANT_NAME}`,
+          added_at: new Date().toISOString(),
+          requiresTrigger: isDM ? false : true,
+        });
+        logger.info(
+          { jid, name: displayName, folder, isDM },
+          'Auto-registered Slack channel on @mention',
+        );
+      }
 
       const isBotMessage = !!msg.bot_id || msg.user === this.botUserId;
 
@@ -241,6 +271,20 @@ export class SlackChannel implements Channel {
       logger.info({ count }, 'Slack channel metadata synced');
     } catch (err) {
       logger.error({ err }, 'Failed to sync Slack channel metadata');
+    }
+  }
+
+  private async resolveChannelName(
+    channelId: string,
+  ): Promise<string | undefined> {
+    try {
+      const result = await this.app.client.conversations.info({
+        channel: channelId,
+      });
+      return result.channel?.name;
+    } catch (err) {
+      logger.debug({ channelId, err }, 'Failed to resolve Slack channel name');
+      return undefined;
     }
   }
 
