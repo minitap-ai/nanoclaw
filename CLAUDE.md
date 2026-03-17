@@ -32,6 +32,32 @@ Single Node.js process with skill-based channel system. Channels (WhatsApp, Tele
 | `/qodo-pr-resolver` | Fetch and fix Qodo PR review issues interactively or in batch |
 | `/get-qodo-rules` | Load org- and repo-level coding rules from Qodo before code tasks |
 
+## Deployment
+
+Production runs on a VPS (`celian@85.190.242.114`) as a Docker container at `~/nanoclaw`. The local Mac instance is **stopped** (launchd unloaded).
+
+Architecture: NanoClaw host container spawns agent containers as siblings via Docker socket mount (not Docker-in-Docker). `HOST_PROJECT_ROOT` env var maps container paths to host paths for volume mounts.
+
+```bash
+# Deploy changes to VPS
+ssh celian@85.190.242.114 "cd ~/nanoclaw && git pull && sg docker -c 'docker build -t nanoclaw:latest . && docker compose down && docker compose up -d'"
+
+# Rebuild agent container on VPS
+ssh celian@85.190.242.114 "cd ~/nanoclaw && sg docker -c 'docker build -t nanoclaw-agent:latest -f container/Dockerfile container/'"
+
+# Check logs
+ssh celian@85.190.242.114 "sg docker -c 'docker logs nanoclaw --tail 30'"
+
+# Restart
+ssh celian@85.190.242.114 "sg docker -c 'cd ~/nanoclaw && docker compose restart'"
+```
+
+Key files: `Dockerfile` (host image), `docker-compose.yml` (compose config), `.dockerignore`.
+
+Non-sensitive `.env` vars are auto-forwarded to agent containers. Vars prefixed with `ANTHROPIC_`, `CLAUDE_CODE_`, `SLACK_`, `WHATSAPP_`, `TELEGRAM_`, `DISCORD_`, or `GMAIL_` are blocked (handled by credential proxy or host-only).
+
+Slack channels auto-register when the bot is @mentioned. DMs auto-register without needing a trigger.
+
 ## Development
 
 Run commands directly—don't tell the user to run them.
@@ -40,19 +66,6 @@ Run commands directly—don't tell the user to run them.
 npm run dev          # Run with hot reload
 npm run build        # Compile TypeScript
 ./container/build.sh # Rebuild agent container
-```
-
-Service management:
-```bash
-# macOS (launchd)
-launchctl load ~/Library/LaunchAgents/com.nanoclaw.plist
-launchctl unload ~/Library/LaunchAgents/com.nanoclaw.plist
-launchctl kickstart -k gui/$(id -u)/com.nanoclaw  # restart
-
-# Linux (systemd)
-systemctl --user start nanoclaw
-systemctl --user stop nanoclaw
-systemctl --user restart nanoclaw
 ```
 
 ## Troubleshooting
