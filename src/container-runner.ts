@@ -13,6 +13,9 @@ import {
   CREDENTIAL_PROXY_PORT,
   DATA_DIR,
   GROUPS_DIR,
+  HOST_DATA_DIR,
+  HOST_GROUPS_DIR,
+  HOST_PROJECT_DIR,
   IDLE_TIMEOUT,
   TIMEZONE,
 } from './config.js';
@@ -56,6 +59,20 @@ interface VolumeMount {
   readonly: boolean;
 }
 
+/**
+ * Convert a local path to the corresponding host path for Docker volume mounts.
+ * When NanoClaw runs inside a container (HOST_PROJECT_ROOT is set), Docker
+ * needs host-side paths for -v bind mounts, not container-internal paths.
+ */
+function toHostPath(localPath: string): string {
+  const projectRoot = process.cwd();
+  if (HOST_PROJECT_DIR === projectRoot) return localPath;
+  if (localPath.startsWith(projectRoot)) {
+    return HOST_PROJECT_DIR + localPath.slice(projectRoot.length);
+  }
+  return localPath;
+}
+
 function buildVolumeMounts(
   group: RegisteredGroup,
   isMain: boolean,
@@ -71,7 +88,7 @@ function buildVolumeMounts(
     // (src/, dist/, package.json, etc.) which would bypass the sandbox
     // entirely on next restart.
     mounts.push({
-      hostPath: projectRoot,
+      hostPath: toHostPath(projectRoot),
       containerPath: '/workspace/project',
       readonly: true,
     });
@@ -89,14 +106,14 @@ function buildVolumeMounts(
 
     // Main also gets its group folder as the working directory
     mounts.push({
-      hostPath: groupDir,
+      hostPath: toHostPath(groupDir),
       containerPath: '/workspace/group',
       readonly: false,
     });
   } else {
     // Other groups only get their own folder
     mounts.push({
-      hostPath: groupDir,
+      hostPath: toHostPath(groupDir),
       containerPath: '/workspace/group',
       readonly: false,
     });
@@ -106,7 +123,7 @@ function buildVolumeMounts(
     const globalDir = path.join(GROUPS_DIR, 'global');
     if (fs.existsSync(globalDir)) {
       mounts.push({
-        hostPath: globalDir,
+        hostPath: toHostPath(globalDir),
         containerPath: '/workspace/global',
         readonly: true,
       });
@@ -158,7 +175,7 @@ function buildVolumeMounts(
     }
   }
   mounts.push({
-    hostPath: groupSessionsDir,
+    hostPath: toHostPath(groupSessionsDir),
     containerPath: '/home/node/.claude',
     readonly: false,
   });
@@ -170,7 +187,7 @@ function buildVolumeMounts(
   fs.mkdirSync(path.join(groupIpcDir, 'tasks'), { recursive: true });
   fs.mkdirSync(path.join(groupIpcDir, 'input'), { recursive: true });
   mounts.push({
-    hostPath: groupIpcDir,
+    hostPath: toHostPath(groupIpcDir),
     containerPath: '/workspace/ipc',
     readonly: false,
   });
@@ -194,7 +211,7 @@ function buildVolumeMounts(
     fs.cpSync(agentRunnerSrc, groupAgentRunnerDir, { recursive: true });
   }
   mounts.push({
-    hostPath: groupAgentRunnerDir,
+    hostPath: toHostPath(groupAgentRunnerDir),
     containerPath: '/app/src',
     readonly: false,
   });

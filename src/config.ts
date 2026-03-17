@@ -16,8 +16,11 @@ export const ASSISTANT_HAS_OWN_NUMBER =
 export const POLL_INTERVAL = 2000;
 export const SCHEDULER_POLL_INTERVAL = 60000;
 
-// Absolute paths needed for container mounts
+// Absolute paths needed for container mounts.
+// HOST_PROJECT_ROOT overrides process.cwd() for Docker volume mount paths
+// when NanoClaw itself runs inside a container (sibling container pattern).
 const PROJECT_ROOT = process.cwd();
+const HOST_PROJECT_ROOT = process.env.HOST_PROJECT_ROOT || PROJECT_ROOT;
 const HOME_DIR = process.env.HOME || os.homedir();
 
 // Mount security: allowlist stored OUTSIDE project root, never mounted into containers
@@ -36,6 +39,13 @@ export const SENDER_ALLOWLIST_PATH = path.join(
 export const STORE_DIR = path.resolve(PROJECT_ROOT, 'store');
 export const GROUPS_DIR = path.resolve(PROJECT_ROOT, 'groups');
 export const DATA_DIR = path.resolve(PROJECT_ROOT, 'data');
+
+// Host-side paths for Docker volume mounts (sibling container pattern).
+// When NanoClaw runs inside a container, these resolve to the host filesystem
+// paths that Docker needs for bind-mounting into agent containers.
+export const HOST_GROUPS_DIR = path.resolve(HOST_PROJECT_ROOT, 'groups');
+export const HOST_DATA_DIR = path.resolve(HOST_PROJECT_ROOT, 'data');
+export const HOST_PROJECT_DIR = HOST_PROJECT_ROOT;
 
 export const CONTAINER_IMAGE =
   process.env.CONTAINER_IMAGE || 'nanoclaw-agent:latest';

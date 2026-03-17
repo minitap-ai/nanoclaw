@@ -1,0 +1,25 @@
+services:
+  nanoclaw:
+    build: .
+    container_name: nanoclaw
+    restart: unless-stopped
+    # Docker socket for spawning sibling agent containers
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Persistent state — mounted at same host path so sibling containers
+      # can bind-mount these directories via HOST_PROJECT_ROOT mapping
+      - ./data:/app/data
+      - ./groups:/app/groups
+      - ./store:/app/store
+      - ./container:/app/container
+    env_file:
+      - .env
+    environment:
+      # Tell NanoClaw where the project lives on the HOST filesystem
+      # so Docker volume mounts for agent containers use correct paths
+      - HOST_PROJECT_ROOT=${HOST_PROJECT_ROOT:-/home/celian/nanoclaw}
+      - TZ=${TZ:-Europe/Paris}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    # Credential proxy port (agents connect via host.docker.internal)
+    # Not exposed to the internet — only reachable by sibling containers
+    network_mode: host
