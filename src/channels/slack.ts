@@ -264,8 +264,8 @@ export class SlackChannel implements Channel {
           name: 'eyes',
         });
       }
-    } catch {
-      // Ignore — reaction may already exist or be removed
+    } catch (err) {
+      logger.debug({ jid, isTyping, err }, 'Reaction typing indicator failed');
     }
   }
 
