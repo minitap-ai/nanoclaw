@@ -25,6 +25,8 @@ services:
       - HOME=/root
       - TZ=${TZ:-Europe/Paris}
       - LOG_LEVEL=${LOG_LEVEL:-info}
+      # Comma-separated list of env vars to pass through to agent containers
+      - CONTAINER_ENV_PASSTHROUGH=REVENUE_CAT_API_KEY,POSTHOG_API_KEY,RENDER_API_KEY
     # Credential proxy port (agents connect via host.docker.internal)
     # Not exposed to the internet — only reachable by sibling containers
     network_mode: host

@@ -255,6 +255,19 @@ function buildContainerArgs(
     args.push('-e', 'CLAUDE_CODE_OAUTH_TOKEN=placeholder');
   }
 
+  // Pass through env vars listed in CONTAINER_ENV_PASSTHROUGH (comma-separated).
+  // These are read from .env and injected into agent containers so agents can
+  // access external APIs without exposing the full .env file.
+  const passthrough = process.env.CONTAINER_ENV_PASSTHROUGH;
+  if (passthrough) {
+    for (const key of passthrough.split(',').map((k) => k.trim()).filter(Boolean)) {
+      const value = process.env[key];
+      if (value) {
+        args.push('-e', `${key}=${value}`);
+      }
+    }
+  }
+
   // Runtime-specific args for host gateway resolution
   args.push(...hostGatewayArgs());
 
