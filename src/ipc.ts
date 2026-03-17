@@ -17,7 +17,7 @@ export interface IpcDeps {
   syncGroups: (force: boolean) => Promise<void>;
   getAvailableGroups: () => AvailableGroup[];
   writeGroupsSnapshot: (
-    groupFolder: string,
+    chatJid: string,
     isMain: boolean,
     availableGroups: AvailableGroup[],
     registeredJids: Set<string>,
@@ -52,14 +52,19 @@ export function startIpcWatcher(deps: IpcDeps): void {
 
     const registeredGroups = deps.registeredGroups();
 
-    // Build folder→isMain lookup from registered groups
-    const folderIsMain = new Map<string, boolean>();
-    for (const group of Object.values(registeredGroups)) {
-      if (group.isMain) folderIsMain.set(group.folder, true);
+    // Build lookup: sanitized JID → isMain and folder → isMain
+    const dirIsMain = new Map<string, boolean>();
+    for (const [jid, group] of Object.entries(registeredGroups)) {
+      if (group.isMain) {
+        dirIsMain.set(group.folder, true);
+        // Per-channel IPC dirs use sanitized JID names
+        const safeJid = jid.replace(/[^A-Za-z0-9-]/g, '-').replace(/-+/g, '-');
+        dirIsMain.set(safeJid, true);
+      }
     }
 
     for (const sourceGroup of groupFolders) {
-      const isMain = folderIsMain.get(sourceGroup) === true;
+      const isMain = dirIsMain.get(sourceGroup) === true;
       const messagesDir = path.join(ipcBaseDir, sourceGroup, 'messages');
       const tasksDir = path.join(ipcBaseDir, sourceGroup, 'tasks');
 

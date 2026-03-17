@@ -19,7 +19,11 @@ import {
   IDLE_TIMEOUT,
   TIMEZONE,
 } from './config.js';
-import { resolveGroupFolderPath, resolveGroupIpcPath } from './group-folder.js';
+import {
+  resolveChannelIpcPath,
+  resolveGroupFolderPath,
+  resolveGroupIpcPath,
+} from './group-folder.js';
 import { logger } from './logger.js';
 import {
   CONTAINER_HOST_GATEWAY,
@@ -77,6 +81,7 @@ function toHostPath(localPath: string): string {
 function buildVolumeMounts(
   group: RegisteredGroup,
   isMain: boolean,
+  chatJid: string,
 ): VolumeMount[] {
   const mounts: VolumeMount[] = [];
   const projectRoot = process.cwd();
@@ -181,9 +186,10 @@ function buildVolumeMounts(
     readonly: false,
   });
 
-  // Per-group IPC namespace: each group gets its own IPC directory
-  // This prevents cross-group privilege escalation via IPC
-  const groupIpcDir = resolveGroupIpcPath(group.folder);
+  // Per-channel IPC namespace: each chatJid gets its own IPC directory.
+  // This prevents cross-channel message leaks when multiple channels
+  // share the same group folder (shared agent brain).
+  const groupIpcDir = resolveChannelIpcPath(chatJid);
   fs.mkdirSync(path.join(groupIpcDir, 'messages'), {
     recursive: true,
     mode: 0o777,
@@ -321,8 +327,8 @@ export async function runContainerAgent(
   const groupDir = resolveGroupFolderPath(group.folder);
   fs.mkdirSync(groupDir, { recursive: true });
 
-  const mounts = buildVolumeMounts(group, input.isMain);
-  const safeName = group.folder.replace(/[^a-zA-Z0-9-]/g, '-');
+  const mounts = buildVolumeMounts(group, input.isMain, input.chatJid);
+  const safeName = input.chatJid.replace(/[^a-zA-Z0-9-]/g, '-');
   const containerName = `nanoclaw-${safeName}-${Date.now()}`;
   const containerArgs = buildContainerArgs(mounts, containerName);
 
@@ -689,6 +695,7 @@ export async function runContainerAgent(
 }
 
 export function writeTasksSnapshot(
+  chatJid: string,
   groupFolder: string,
   isMain: boolean,
   tasks: Array<{
@@ -701,8 +708,7 @@ export function writeTasksSnapshot(
     next_run: string | null;
   }>,
 ): void {
-  // Write filtered tasks to the group's IPC directory
-  const groupIpcDir = resolveGroupIpcPath(groupFolder);
+  const groupIpcDir = resolveChannelIpcPath(chatJid);
   fs.mkdirSync(groupIpcDir, { recursive: true });
 
   // Main sees all tasks, others only see their own
@@ -727,12 +733,12 @@ export interface AvailableGroup {
  * Non-main groups only see their own registration status.
  */
 export function writeGroupsSnapshot(
-  groupFolder: string,
+  chatJid: string,
   isMain: boolean,
   groups: AvailableGroup[],
   registeredJids: Set<string>,
 ): void {
-  const groupIpcDir = resolveGroupIpcPath(groupFolder);
+  const groupIpcDir = resolveChannelIpcPath(chatJid);
   fs.mkdirSync(groupIpcDir, { recursive: true });
 
   // Main sees all groups; others see nothing (they can't activate groups)

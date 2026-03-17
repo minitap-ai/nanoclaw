@@ -133,6 +133,7 @@ async function runTask(
   const isMain = group.isMain === true;
   const tasks = getAllTasks();
   writeTasksSnapshot(
+    task.chat_jid,
     task.group_folder,
     isMain,
     tasks.map((t) => ({

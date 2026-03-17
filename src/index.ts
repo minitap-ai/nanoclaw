@@ -282,6 +282,7 @@ async function runAgent(
   // Update tasks snapshot for container to read (filtered by group)
   const tasks = getAllTasks();
   writeTasksSnapshot(
+    chatJid,
     group.folder,
     isMain,
     tasks.map((t) => ({
@@ -298,7 +299,7 @@ async function runAgent(
   // Update available groups snapshot (main group only can see all groups)
   const availableGroups = getAvailableGroups();
   writeGroupsSnapshot(
-    group.folder,
+    chatJid,
     isMain,
     availableGroups,
     new Set(Object.keys(registeredGroups)),

@@ -42,3 +42,23 @@ export function resolveGroupIpcPath(folder: string): string {
   ensureWithinBase(ipcBaseDir, ipcPath);
   return ipcPath;
 }
+
+/**
+ * Sanitize a chatJid into a safe directory name for per-channel IPC.
+ * e.g. "slack:C0AA9KRGS00" → "slack-C0AA9KRGS00"
+ */
+export function sanitizeJidForPath(jid: string): string {
+  return jid.replace(/[^A-Za-z0-9-]/g, '-').replace(/-+/g, '-').slice(0, 64);
+}
+
+/**
+ * Resolve per-channel IPC path. Used when multiple channels share a folder
+ * but need isolated IPC to prevent cross-channel message leaks.
+ */
+export function resolveChannelIpcPath(jid: string): string {
+  const safe = sanitizeJidForPath(jid);
+  const ipcBaseDir = path.resolve(DATA_DIR, 'ipc');
+  const ipcPath = path.resolve(ipcBaseDir, safe);
+  ensureWithinBase(ipcBaseDir, ipcPath);
+  return ipcPath;
+}
