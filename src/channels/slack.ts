@@ -102,8 +102,12 @@ export class SlackChannel implements Channel {
       const timestamp = new Date(parseFloat(msg.ts) * 1000).toISOString();
       const isGroup = msg.channel_type !== 'im';
 
-      // Always report metadata using the base channel JID (threads don't need chat discovery)
+      // Always report metadata for the base channel (for chat discovery)
       this.opts.onChatMetadata(baseJid, timestamp, undefined, 'slack', isGroup);
+      // Thread JIDs also need a chats row so messages can reference them (FK constraint)
+      if (threadTs) {
+        this.opts.onChatMetadata(jid, timestamp, undefined, 'slack', isGroup);
+      }
 
       // Auto-register channels when bot is @mentioned in an unregistered channel.
       // This lets the bot grow with the Slack workspace — just invite it and @mention.
