@@ -104,14 +104,19 @@ async function runTask(
   fs.mkdirSync(groupDir, { recursive: true });
 
   logger.info(
-    { taskId: task.id, group: task.group_folder },
+    { taskId: task.id, group: task.group_folder, chatJid: task.chat_jid },
     'Running scheduled task',
   );
 
   const groups = deps.registeredGroups();
-  const group = Object.values(groups).find(
-    (g) => g.folder === task.group_folder,
-  );
+  // Look up by JID first (exact match for the originating channel),
+  // then fall back to folder-based lookup. This matters when multiple
+  // channels share the same folder (e.g. Slack channels) — the folder
+  // search returns whichever group was inserted first, which may have
+  // different isMain/containerConfig than the task's actual channel.
+  const group =
+    groups[task.chat_jid] ||
+    Object.values(groups).find((g) => g.folder === task.group_folder);
 
   if (!group) {
     logger.error(
