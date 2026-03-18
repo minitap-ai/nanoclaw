@@ -190,18 +190,18 @@ function buildVolumeMounts(
   // This prevents cross-channel message leaks when multiple channels
   // share the same group folder (shared agent brain).
   const groupIpcDir = resolveChannelIpcPath(chatJid);
-  fs.mkdirSync(path.join(groupIpcDir, 'messages'), {
-    recursive: true,
-    mode: 0o777,
-  });
-  fs.mkdirSync(path.join(groupIpcDir, 'tasks'), {
-    recursive: true,
-    mode: 0o777,
-  });
-  fs.mkdirSync(path.join(groupIpcDir, 'input'), {
-    recursive: true,
-    mode: 0o777,
-  });
+  for (const sub of ['messages', 'tasks', 'input']) {
+    const dir = path.join(groupIpcDir, sub);
+    fs.mkdirSync(dir, { recursive: true });
+    // Ensure world-writable even if directory pre-existed or umask
+    // masked the mode. Without this, agent containers (which may run
+    // as a different uid) can't write IPC files after a restart.
+    try {
+      fs.chmodSync(dir, 0o777);
+    } catch {
+      /* ignore if already correct */
+    }
+  }
   mounts.push({
     hostPath: toHostPath(groupIpcDir),
     containerPath: '/workspace/ipc',
