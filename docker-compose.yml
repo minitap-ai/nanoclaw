@@ -21,7 +21,7 @@ services:
     environment:
       # Tell NanoClaw where the project lives on the HOST filesystem
       # so Docker volume mounts for agent containers use correct paths
-      - HOST_PROJECT_ROOT=${HOST_PROJECT_ROOT:-/home/celian/nanoclaw}
+      - HOST_PROJECT_ROOT=${HOST_PROJECT_ROOT:?HOST_PROJECT_ROOT must be set in .env}
       - HOME=/root
       - TZ=${TZ:-Europe/Paris}
       - LOG_LEVEL=${LOG_LEVEL:-info}
