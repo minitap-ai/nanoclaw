@@ -49,6 +49,7 @@ export class SlackChannel implements Channel {
   private flushing = false;
   private userNameCache = new Map<string, string>();
   private lastMessageTs = new Map<string, string>();
+  private parentMessageFetched = new Set<string>();
 
   private opts: SlackChannelOpts;
 
@@ -107,6 +108,15 @@ export class SlackChannel implements Channel {
       // Thread JIDs also need a chats row so messages can reference them (FK constraint)
       if (threadTs) {
         this.opts.onChatMetadata(jid, timestamp, undefined, 'slack', isGroup);
+
+        // Fetch and store the parent message so the agent has context
+        // about what the thread is replying to. Only fetch once per thread.
+        await this.ensureParentMessageStored(
+          msg.channel,
+          threadTs,
+          jid,
+          isGroup,
+        );
       }
 
       // Auto-register channels when bot is @mentioned in an unregistered channel.
@@ -387,6 +397,73 @@ export class SlackChannel implements Channel {
     } catch (err) {
       logger.debug({ userId, err }, 'Failed to resolve Slack user name');
       return undefined;
+    }
+  }
+
+  /**
+   * Fetch the thread's parent message from Slack and store it so the agent
+   * has context about what the thread is about. Only fetches once per thread.
+   */
+  private async ensureParentMessageStored(
+    channelId: string,
+    threadTs: string,
+    threadJid: string,
+    isGroup: boolean,
+  ): Promise<void> {
+    const key = `${channelId}:${threadTs}`;
+    if (this.parentMessageFetched.has(key)) return;
+    this.parentMessageFetched.add(key);
+
+    try {
+      // Fetch the parent message using conversations.replies with limit=1
+      const result = await this.app.client.conversations.replies({
+        channel: channelId,
+        ts: threadTs,
+        limit: 1,
+        inclusive: true,
+      });
+
+      const parent = result.messages?.[0];
+      if (!parent?.text) return;
+
+      const parentTimestamp = new Date(
+        parseFloat(parent.ts!) * 1000,
+      ).toISOString();
+
+      const isBotMessage =
+        !!parent.bot_id || parent.user === this.botUserId;
+      let senderName: string;
+      if (isBotMessage) {
+        senderName = ASSISTANT_NAME;
+      } else {
+        senderName =
+          (parent.user
+            ? await this.resolveUserName(parent.user)
+            : undefined) ||
+          parent.user ||
+          'unknown';
+      }
+
+      this.opts.onMessage(threadJid, {
+        id: parent.ts!,
+        chat_jid: threadJid,
+        sender: parent.user || parent.bot_id || '',
+        sender_name: senderName,
+        content: parent.text,
+        timestamp: parentTimestamp,
+        is_from_me: isBotMessage,
+        is_bot_message: isBotMessage,
+      });
+
+      logger.debug(
+        { channelId, threadTs, length: parent.text.length },
+        'Stored thread parent message for context',
+      );
+    } catch (err) {
+      logger.debug(
+        { channelId, threadTs, err },
+        'Failed to fetch thread parent message',
+      );
     }
   }
 
