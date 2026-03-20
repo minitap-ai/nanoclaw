@@ -101,10 +101,16 @@ function buildVolumeMounts(
 
     // Shadow .env so the agent cannot read secrets from the mounted project root.
     // Credentials are injected by the credential proxy, never exposed to containers.
+    // Use an empty file instead of /dev/null because Docker can't create a
+    // mountpoint inside a read-only parent mount for /dev/null.
     const envFile = path.join(projectRoot, '.env');
     if (fs.existsSync(envFile)) {
+      const emptyEnv = path.join(DATA_DIR, '.env.empty');
+      if (!fs.existsSync(emptyEnv)) {
+        fs.writeFileSync(emptyEnv, '');
+      }
       mounts.push({
-        hostPath: '/dev/null',
+        hostPath: toHostPath(emptyEnv),
         containerPath: '/workspace/project/.env',
         readonly: true,
       });
