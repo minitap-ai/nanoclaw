@@ -34,22 +34,22 @@ Single Node.js process with skill-based channel system. Channels (WhatsApp, Tele
 
 ## Deployment
 
-Production runs on a VPS (`celian@85.190.242.114`) as a Docker container at `~/nanoclaw`. The local Mac instance is **stopped** (launchd unloaded).
+Production runs on a GCP VM (`nanoclaw` in `europe-west9-a`, project `minitap-sandbox`) as a Docker container at `~/nanoclaw`.
 
 Architecture: NanoClaw host container spawns agent containers as siblings via Docker socket mount (not Docker-in-Docker). `HOST_PROJECT_ROOT` env var maps container paths to host paths for volume mounts.
 
 ```bash
-# Deploy changes to VPS
-ssh celian@85.190.242.114 "cd ~/nanoclaw && git pull && sg docker -c 'docker build -t nanoclaw:latest . && docker compose down && docker compose up -d'"
+# Deploy changes
+gcloud compute ssh luc_minitap_ai@nanoclaw --zone=europe-west9-a --project=minitap-sandbox --command="cd ~/nanoclaw && sudo git pull && sg docker -c 'docker build -t nanoclaw:latest . && docker compose down && docker compose up -d'"
 
-# Rebuild agent container on VPS
-ssh celian@85.190.242.114 "cd ~/nanoclaw && sg docker -c 'docker build -t nanoclaw-agent:latest -f container/Dockerfile container/'"
+# Rebuild agent container
+gcloud compute ssh luc_minitap_ai@nanoclaw --zone=europe-west9-a --project=minitap-sandbox --command="cd ~/nanoclaw && sg docker -c 'docker build -t nanoclaw-agent:latest -f container/Dockerfile container/'"
 
 # Check logs
-ssh celian@85.190.242.114 "sg docker -c 'docker logs nanoclaw --tail 30'"
+gcloud compute ssh luc_minitap_ai@nanoclaw --zone=europe-west9-a --project=minitap-sandbox --command="sg docker -c 'docker logs nanoclaw --tail 30'"
 
 # Restart
-ssh celian@85.190.242.114 "sg docker -c 'cd ~/nanoclaw && docker compose restart'"
+gcloud compute ssh luc_minitap_ai@nanoclaw --zone=europe-west9-a --project=minitap-sandbox --command="sg docker -c 'cd ~/nanoclaw && docker compose restart'"
 ```
 
 Key files: `Dockerfile` (host image), `docker-compose.yml` (compose config), `.dockerignore`.
