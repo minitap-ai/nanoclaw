@@ -78,6 +78,26 @@ function toHostPath(localPath: string): string {
   return localPath;
 }
 
+/**
+ * Create a directory that agent containers can write to.
+ * When the host runs as root (e.g., in Docker), directories are created
+ * with root ownership. Agent containers run as node (uid 1000), so we
+ * need to chown writable directories to match.
+ */
+const AGENT_UID = 1000;
+const AGENT_GID = 1000;
+function mkdirForAgent(dirPath: string): void {
+  fs.mkdirSync(dirPath, { recursive: true });
+  const hostUid = process.getuid?.();
+  if (hostUid === 0) {
+    try {
+      fs.chownSync(dirPath, AGENT_UID, AGENT_GID);
+    } catch {
+      /* ignore if already correct */
+    }
+  }
+}
+
 function buildVolumeMounts(
   group: RegisteredGroup,
   isMain: boolean,
@@ -151,7 +171,7 @@ function buildVolumeMounts(
     'channels',
     safeChannelName,
   );
-  fs.mkdirSync(channelDir, { recursive: true });
+  mkdirForAgent(channelDir);
   mounts.push({
     hostPath: toHostPath(channelDir),
     containerPath: '/workspace/channel',
@@ -166,7 +186,7 @@ function buildVolumeMounts(
     group.folder,
     '.claude',
   );
-  fs.mkdirSync(groupSessionsDir, { recursive: true });
+  mkdirForAgent(groupSessionsDir);
   const settingsFile = path.join(groupSessionsDir, 'settings.json');
   if (!fs.existsSync(settingsFile)) {
     fs.writeFileSync(
@@ -347,7 +367,7 @@ export async function runContainerAgent(
   const startTime = Date.now();
 
   const groupDir = resolveGroupFolderPath(group.folder);
-  fs.mkdirSync(groupDir, { recursive: true });
+  mkdirForAgent(groupDir);
 
   const mounts = buildVolumeMounts(group, input.isMain, input.chatJid);
   const safeName = input.chatJid.replace(/[^a-zA-Z0-9-]/g, '-');
@@ -378,7 +398,7 @@ export async function runContainerAgent(
   );
 
   const logsDir = path.join(groupDir, 'logs');
-  fs.mkdirSync(logsDir, { recursive: true });
+  mkdirForAgent(logsDir);
 
   return new Promise((resolve) => {
     const container = spawn(CONTAINER_RUNTIME_BIN, containerArgs, {
