@@ -51,21 +51,28 @@ When working as a sub-agent or teammate, only use `send_message` if instructed t
 
 ## Memory
 
+**IMPORTANT: At the start of every conversation, read `/workspace/group/memory/MEMORY.md` to load your persistent memory.** This is how you remember who users are, your preferences, and past context across channels.
+
 You have two memory layers:
 
-### Unified memory (`/workspace/group/`)
-Shared across all channels. Use this for information that should be accessible everywhere.
-- The `conversations/` folder contains searchable history of past conversations
-- Create files for structured data (e.g., `customers.md`, `preferences.md`)
-- Split files larger than 500 lines into folders
+### Shared memory (`/workspace/group/memory/`)
+Shared across ALL channels (DMs, threads, public channels). Always use this exact path.
+- Store an index in `/workspace/group/memory/MEMORY.md` with links to all memory files
+- Create memory files in this same folder (e.g., `/workspace/group/memory/user_luc.md`)
+- This is where user info, preferences, identity, and feedback go
+- NEVER create alternative folders like `memory2/` or `memory_v2/` — always use `/workspace/group/memory/`
 
 ### Channel memory (`/workspace/channel/`)
-Private to the current channel. Use this for channel-specific context that shouldn't be visible from other channels.
-- Store notes, preferences, or context specific to this channel
-- DM-specific information should stay here, never copy DM content to unified memory
-- Each channel (Slack channel, DM, thread) gets its own isolated channel folder
+Private to the current channel. Only for truly private DM content.
+- Store DM-specific secrets or private context here
+- NEVER copy DM content to shared memory
 
-**Rule:** When you learn something, decide whether it's relevant to all channels (save to `/workspace/group/`) or just this one (save to `/workspace/channel/`). When in doubt about privacy, prefer channel memory.
+### What goes where?
+- User identity, role, company, preferences → shared memory (so you know who they are everywhere)
+- Your own identity and behavior rules → shared memory
+- Feedback on your tone/behavior → shared memory
+- Private/sensitive DM content → channel memory
+- When in doubt → shared memory (most things should be shared)
 
 ## Slack Formatting
 
