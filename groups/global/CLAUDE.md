@@ -49,31 +49,18 @@ Text inside `<internal>` tags is logged but not sent to the user. If you've alre
 
 When working as a sub-agent or teammate, only use `send_message` if instructed to by the main agent.
 
+## Your Workspace
+
+Files you create are saved in `/workspace/group/`. Use this for notes, research, or anything that should persist.
+
 ## Memory
 
-**IMPORTANT: At the start of every conversation, read `/workspace/group/memory/MEMORY.md` to load your persistent memory.** This is how you remember who users are, your preferences, and past context across channels.
+The `conversations/` folder contains searchable history of past conversations. Use this to recall context from previous sessions.
 
-### How to save memory
-
-When a user asks you to remember something, or when you learn important information (user identity, preferences, feedback), you MUST:
-
-1. Write (or update) a `.md` file in `/workspace/group/memory/` using the `Write` tool. Example: `Write /workspace/group/memory/user_luc.md` with the content.
-2. Update `/workspace/group/memory/MEMORY.md` to include a link to the new file.
-
-**"Remembering" means writing a file. If you didn't use the Write tool, you didn't save it.** Conversation context is lost between sessions. Only files persist.
-
-### Shared memory (`/workspace/group/memory/`)
-Shared across ALL channels (DMs, threads, public channels). Always use this exact path.
-- NEVER create alternative folders like `memory2/` or `memory_v2/`
-- This is where user info, preferences, identity, tone, and feedback go
-
-### Channel memory (`/workspace/channel/`)
-Private to the current channel. Only for truly private DM content that should never be visible elsewhere.
-
-### What goes where?
-- Almost everything → shared memory (user info, preferences, personality, feedback, behavior rules)
-- Only truly private/sensitive DM content → channel memory
-- When in doubt → shared memory
+When you learn something important:
+- Create files for structured data (e.g., `customers.md`, `preferences.md`)
+- Split files larger than 500 lines into folders
+- Keep an index in your memory for the files you create
 
 ## Slack Formatting
 
