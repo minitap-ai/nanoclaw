@@ -53,26 +53,27 @@ When working as a sub-agent or teammate, only use `send_message` if instructed t
 
 **IMPORTANT: At the start of every conversation, read `/workspace/group/memory/MEMORY.md` to load your persistent memory.** This is how you remember who users are, your preferences, and past context across channels.
 
-You have two memory layers:
+### How to save memory
+
+When a user asks you to remember something, or when you learn important information (user identity, preferences, feedback), you MUST:
+
+1. Write (or update) a `.md` file in `/workspace/group/memory/` using the `Write` tool. Example: `Write /workspace/group/memory/user_luc.md` with the content.
+2. Update `/workspace/group/memory/MEMORY.md` to include a link to the new file.
+
+**"Remembering" means writing a file. If you didn't use the Write tool, you didn't save it.** Conversation context is lost between sessions. Only files persist.
 
 ### Shared memory (`/workspace/group/memory/`)
 Shared across ALL channels (DMs, threads, public channels). Always use this exact path.
-- Store an index in `/workspace/group/memory/MEMORY.md` with links to all memory files
-- Create memory files in this same folder (e.g., `/workspace/group/memory/user_luc.md`)
-- This is where user info, preferences, identity, and feedback go
-- NEVER create alternative folders like `memory2/` or `memory_v2/` — always use `/workspace/group/memory/`
+- NEVER create alternative folders like `memory2/` or `memory_v2/`
+- This is where user info, preferences, identity, tone, and feedback go
 
 ### Channel memory (`/workspace/channel/`)
-Private to the current channel. Only for truly private DM content.
-- Store DM-specific secrets or private context here
-- NEVER copy DM content to shared memory
+Private to the current channel. Only for truly private DM content that should never be visible elsewhere.
 
 ### What goes where?
-- User identity, role, company, preferences → shared memory (so you know who they are everywhere)
-- Your own identity and behavior rules → shared memory
-- Feedback on your tone/behavior → shared memory
-- Private/sensitive DM content → channel memory
-- When in doubt → shared memory (most things should be shared)
+- Almost everything → shared memory (user info, preferences, personality, feedback, behavior rules)
+- Only truly private/sensitive DM content → channel memory
+- When in doubt → shared memory
 
 ## Slack Formatting
 
