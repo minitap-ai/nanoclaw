@@ -147,28 +147,6 @@ function createSchema(database: Database.Database): void {
     /* migration already done or not needed */
   }
 
-  // Migrate sessions table from group_folder key to chat_jid key.
-  // Per-channel sessions ensure DM conversation history doesn't leak into public channels.
-  try {
-    const schema = database
-      .prepare(
-        "SELECT sql FROM sqlite_master WHERE name='sessions' AND type='table'",
-      )
-      .get() as { sql: string } | undefined;
-    if (schema?.sql?.includes('group_folder')) {
-      database.exec(`
-        CREATE TABLE sessions_new (
-          chat_jid TEXT PRIMARY KEY,
-          session_id TEXT NOT NULL
-        );
-        DROP TABLE sessions;
-        ALTER TABLE sessions_new RENAME TO sessions;
-      `);
-    }
-  } catch {
-    /* migration already done or not needed */
-  }
-
   // Add channel and is_group columns if they don't exist (migration for existing DBs)
   try {
     database.exec(`ALTER TABLE chats ADD COLUMN channel TEXT`);
@@ -569,33 +547,31 @@ export function setRouterState(key: string, value: string): void {
 }
 
 // --- Session accessors ---
-// Sessions are keyed by chat JID so each channel gets its own conversation.
-// This prevents DM history from leaking into public channel conversations.
 
-export function getSession(chatJid: string): string | undefined {
+export function getSession(groupFolder: string): string | undefined {
   const row = db
-    .prepare('SELECT session_id FROM sessions WHERE chat_jid = ?')
-    .get(chatJid) as { session_id: string } | undefined;
+    .prepare('SELECT session_id FROM sessions WHERE group_folder = ?')
+    .get(groupFolder) as { session_id: string } | undefined;
   return row?.session_id;
 }
 
-export function setSession(chatJid: string, sessionId: string): void {
+export function setSession(groupFolder: string, sessionId: string): void {
   db.prepare(
-    'INSERT OR REPLACE INTO sessions (chat_jid, session_id) VALUES (?, ?)',
-  ).run(chatJid, sessionId);
+    'INSERT OR REPLACE INTO sessions (group_folder, session_id) VALUES (?, ?)',
+  ).run(groupFolder, sessionId);
 }
 
-export function deleteSession(chatJid: string): void {
-  db.prepare('DELETE FROM sessions WHERE chat_jid = ?').run(chatJid);
+export function deleteSession(groupFolder: string): void {
+  db.prepare('DELETE FROM sessions WHERE group_folder = ?').run(groupFolder);
 }
 
 export function getAllSessions(): Record<string, string> {
   const rows = db
-    .prepare('SELECT chat_jid, session_id FROM sessions')
-    .all() as Array<{ chat_jid: string; session_id: string }>;
+    .prepare('SELECT group_folder, session_id FROM sessions')
+    .all() as Array<{ group_folder: string; session_id: string }>;
   const result: Record<string, string> = {};
   for (const row of rows) {
-    result[row.chat_jid] = row.session_id;
+    result[row.group_folder] = row.session_id;
   }
   return result;
 }

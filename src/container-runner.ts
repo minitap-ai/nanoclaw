@@ -162,22 +162,6 @@ function buildVolumeMounts(
     }
   }
 
-  // Per-channel memory directory: each channel gets its own writable folder
-  // for channel-specific notes. The shared group folder provides unified memory.
-  // This lets the agent remember things specific to a channel (e.g., DM-only context).
-  const safeChannelName = chatJid.replace(/[^a-zA-Z0-9-]/g, '-');
-  const channelDir = path.join(
-    resolveGroupFolderPath(group.folder),
-    'channels',
-    safeChannelName,
-  );
-  mkdirForAgent(channelDir);
-  mounts.push({
-    hostPath: toHostPath(channelDir),
-    containerPath: '/workspace/channel',
-    readonly: false,
-  });
-
   // Per-group Claude sessions directory (isolated from other groups)
   // Each group gets their own .claude/ to prevent cross-group session access
   const groupSessionsDir = path.join(
