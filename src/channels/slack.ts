@@ -132,8 +132,7 @@ export class SlackChannel implements Channel {
 
         // DMs and #mega don't require a trigger — all messages are processed.
         // Other channels require @mention to trigger the agent.
-        const noTrigger =
-          isDM || displayName?.toLowerCase() === 'mega';
+        const noTrigger = isDM || displayName?.toLowerCase() === 'mega-ai';
 
         this.opts.registerGroup(baseJid, {
           name: displayName || msg.channel,
