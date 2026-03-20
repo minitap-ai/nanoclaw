@@ -187,11 +187,20 @@ export class SlackChannel implements Channel {
         );
       }
 
-      const isBotMessage = !!msg.bot_id || msg.user === this.botUserId;
+      // Only mark messages from OUR bot as bot messages (filtered from agent context).
+      // Other Slack bots/apps (e.g., Lucent, Posthog) should be visible to the agent.
+      const isOurBot = msg.user === this.botUserId;
+      const isAnyBot = !!msg.bot_id || isOurBot;
 
       let senderName: string;
-      if (isBotMessage) {
+      if (isOurBot) {
         senderName = ASSISTANT_NAME;
+      } else if (isAnyBot) {
+        // Other bots: use bot profile name or fall back to bot_id
+        senderName =
+          (msg as BotMessageEvent).username ||
+          msg.bot_id ||
+          'bot';
       } else {
         senderName =
           (msg.user ? await this.resolveUserName(msg.user) : undefined) ||
@@ -203,7 +212,7 @@ export class SlackChannel implements Channel {
       // Slack encodes @mentions as <@U12345>, which won't match TRIGGER_PATTERN
       // (e.g., ^@<ASSISTANT_NAME>\b), so we prepend the trigger when the bot is @mentioned.
       let content = msg.text;
-      if (this.botUserId && !isBotMessage) {
+      if (this.botUserId && !isOurBot) {
         const mentionPattern = `<@${this.botUserId}>`;
         if (
           content.includes(mentionPattern) &&
@@ -214,7 +223,7 @@ export class SlackChannel implements Channel {
       }
 
       // Track last user message timestamp for reaction-based typing indicator
-      if (!isBotMessage) {
+      if (!isOurBot) {
         this.lastMessageTs.set(jid, msg.ts);
       }
 
@@ -225,8 +234,8 @@ export class SlackChannel implements Channel {
         sender_name: senderName,
         content,
         timestamp,
-        is_from_me: isBotMessage,
-        is_bot_message: isBotMessage,
+        is_from_me: isOurBot,
+        is_bot_message: isOurBot,
       });
     });
   }
@@ -430,16 +439,14 @@ export class SlackChannel implements Channel {
         parseFloat(parent.ts!) * 1000,
       ).toISOString();
 
-      const isBotMessage =
-        !!parent.bot_id || parent.user === this.botUserId;
+      const isOurBot = parent.user === this.botUserId;
+
       let senderName: string;
-      if (isBotMessage) {
+      if (isOurBot) {
         senderName = ASSISTANT_NAME;
       } else {
         senderName =
-          (parent.user
-            ? await this.resolveUserName(parent.user)
-            : undefined) ||
+          (parent.user ? await this.resolveUserName(parent.user) : undefined) ||
           parent.user ||
           'unknown';
       }
@@ -451,8 +458,8 @@ export class SlackChannel implements Channel {
         sender_name: senderName,
         content: parent.text,
         timestamp: parentTimestamp,
-        is_from_me: isBotMessage,
-        is_bot_message: isBotMessage,
+        is_from_me: isOurBot,
+        is_bot_message: isOurBot,
       });
 
       logger.debug(
