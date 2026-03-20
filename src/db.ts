@@ -405,6 +405,27 @@ export function getMessagesSince(
   return db.prepare(sql).all(...params) as NewMessage[];
 }
 
+/**
+ * Fetch the parent message of a Slack thread from the channel JID.
+ * The parent message is stored under the base channel JID (before the thread
+ * existed), so thread queries miss it. We extract thread_ts from the thread
+ * JID and look up the message by its Slack ts (stored as `id`).
+ */
+export function getThreadParentMessage(
+  threadJid: string,
+): NewMessage | undefined {
+  const match = threadJid.match(/^(.+):thread:(.+)$/);
+  if (!match) return undefined;
+  const [, baseJid, threadTs] = match;
+  // The parent message's Slack ts is the thread_ts; its DB id is that ts.
+  return db
+    .prepare(
+      `SELECT id, chat_jid, sender, sender_name, content, timestamp, is_from_me
+       FROM messages WHERE id = ? AND chat_jid = ?`,
+    )
+    .get(threadTs, baseJid) as NewMessage | undefined;
+}
+
 export function createTask(
   task: Omit<ScheduledTask, 'last_run' | 'last_result'>,
 ): void {

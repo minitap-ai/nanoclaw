@@ -33,6 +33,7 @@ import {
   getAllSessions,
   getAllTasks,
   getMessagesSince,
+  getThreadParentMessage,
   getNewMessages,
   getChatName,
   getRegisteredGroup,
@@ -183,6 +184,15 @@ async function processGroupMessages(chatJid: string): Promise<boolean> {
     200,
     isThread,
   );
+
+  // For threads, prepend the parent message (stored under the channel JID)
+  // so the agent has context about what started the thread.
+  if (isThread && missedMessages.length > 0) {
+    const parent = getThreadParentMessage(chatJid);
+    if (parent && !missedMessages.some((m) => m.id === parent.id)) {
+      missedMessages.unshift(parent);
+    }
+  }
 
   if (missedMessages.length === 0) return true;
 
@@ -454,6 +464,13 @@ async function startMessageLoop(): Promise<void> {
             200,
             isThread,
           );
+          // For threads, prepend the parent message so agent has full context.
+          if (isThread && allPending.length > 0) {
+            const parent = getThreadParentMessage(chatJid);
+            if (parent && !allPending.some((m) => m.id === parent.id)) {
+              allPending.unshift(parent);
+            }
+          }
           const messagesToSend =
             allPending.length > 0 ? allPending : groupMessages;
           const formatted = formatMessages(
