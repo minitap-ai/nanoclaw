@@ -36,12 +36,21 @@ When working as a sub-agent or teammate, only use `send_message` if instructed t
 
 ## Memory
 
-The `conversations/` folder contains searchable history of past conversations. Use this to recall context from previous sessions.
+You have two memory layers:
 
-When you learn something important:
+### Unified memory (`/workspace/group/`)
+Shared across all channels. Use this for information that should be accessible everywhere.
+- The `conversations/` folder contains searchable history of past conversations
 - Create files for structured data (e.g., `customers.md`, `preferences.md`)
 - Split files larger than 500 lines into folders
-- Keep an index in your memory for the files you create
+
+### Channel memory (`/workspace/channel/`)
+Private to the current channel. Use this for channel-specific context that shouldn't be visible from other channels.
+- Store notes, preferences, or context specific to this channel
+- DM-specific information should stay here — never copy DM content to unified memory
+- Each channel (Slack channel, DM, thread) gets its own isolated channel folder
+
+**Rule:** When you learn something, decide whether it's relevant to all channels (save to `/workspace/group/`) or just this one (save to `/workspace/channel/`). When in doubt about privacy, prefer channel memory.
 
 ## WhatsApp Formatting (and other messaging apps)
 
@@ -61,12 +70,13 @@ This is the **main channel**, which has elevated privileges.
 
 ## Container Mounts
 
-Main has read-only access to the project and read-write access to its group folder:
+Main has read-only access to the project, read-write access to its group folder, and a per-channel memory directory:
 
 | Container Path | Host Path | Access |
 |----------------|-----------|--------|
 | `/workspace/project` | Project root | read-only |
 | `/workspace/group` | `groups/main/` | read-write |
+| `/workspace/channel` | `groups/main/channels/{channel-id}/` | read-write |
 
 Key paths inside the container:
 - `/workspace/project/store/messages.db` - SQLite database

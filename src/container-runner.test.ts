@@ -14,6 +14,9 @@ vi.mock('./config.js', () => ({
   CREDENTIAL_PROXY_PORT: 3001,
   DATA_DIR: '/tmp/nanoclaw-test-data',
   GROUPS_DIR: '/tmp/nanoclaw-test-groups',
+  HOST_DATA_DIR: '/tmp/nanoclaw-test-data',
+  HOST_GROUPS_DIR: '/tmp/nanoclaw-test-groups',
+  HOST_PROJECT_DIR: '/tmp/nanoclaw-test-project',
   IDLE_TIMEOUT: 1800000, // 30min
   TIMEZONE: 'America/Los_Angeles',
 }));
@@ -49,6 +52,32 @@ vi.mock('fs', async () => {
 // Mock mount-security
 vi.mock('./mount-security.js', () => ({
   validateAdditionalMounts: vi.fn(() => []),
+}));
+
+// Mock group-folder
+vi.mock('./group-folder.js', () => ({
+  resolveGroupFolderPath: vi.fn((folder: string) => `/tmp/nanoclaw-test-groups/${folder}`),
+  resolveGroupIpcPath: vi.fn((folder: string) => `/tmp/nanoclaw-test-data/ipc/${folder}`),
+  resolveChannelIpcPath: vi.fn((jid: string) => `/tmp/nanoclaw-test-data/ipc/${jid}`),
+}));
+
+// Mock container-runtime
+vi.mock('./container-runtime.js', () => ({
+  CONTAINER_HOST_GATEWAY: 'host.docker.internal',
+  CONTAINER_RUNTIME_BIN: 'docker',
+  hostGatewayArgs: vi.fn(() => []),
+  readonlyMountArgs: vi.fn((host: string, container: string) => ['-v', `${host}:${container}:ro`]),
+  stopContainer: vi.fn((name: string) => `docker stop ${name}`),
+}));
+
+// Mock credential-proxy
+vi.mock('./credential-proxy.js', () => ({
+  detectAuthMode: vi.fn(() => 'api-key'),
+}));
+
+// Mock env
+vi.mock('./env.js', () => ({
+  readAllEnvVars: vi.fn(() => ({})),
 }));
 
 // Create a controllable fake ChildProcess

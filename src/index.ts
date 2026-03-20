@@ -290,7 +290,7 @@ async function runAgent(
   onOutput?: (output: ContainerOutput) => Promise<void>,
 ): Promise<'success' | 'error'> {
   const isMain = group.isMain === true;
-  const sessionId = sessions[group.folder];
+  const sessionId = sessions[chatJid];
 
   // Update tasks snapshot for container to read (filtered by group)
   const tasks = getAllTasks();
@@ -325,8 +325,8 @@ async function runAgent(
   const wrappedOnOutput = onOutput
     ? async (output: ContainerOutput) => {
         if (output.newSessionId) {
-          sessions[group.folder] = output.newSessionId;
-          setSession(group.folder, output.newSessionId);
+          sessions[chatJid] = output.newSessionId;
+          setSession(chatJid, output.newSessionId);
         }
         await onOutput(output);
       }
@@ -349,8 +349,8 @@ async function runAgent(
     );
 
     if (output.newSessionId) {
-      sessions[group.folder] = output.newSessionId;
-      setSession(group.folder, output.newSessionId);
+      sessions[chatJid] = output.newSessionId;
+      setSession(chatJid, output.newSessionId);
     }
 
     if (output.status === 'error') {
@@ -358,11 +358,11 @@ async function runAgent(
       // clear it so the next retry starts a fresh conversation instead of looping.
       if (output.error?.includes('No conversation found with session ID')) {
         logger.warn(
-          { group: group.name, sessionId: sessions[group.folder] },
+          { group: group.name, sessionId: sessions[chatJid] },
           'Stale session detected, clearing for fresh start',
         );
-        delete sessions[group.folder];
-        deleteSession(group.folder);
+        delete sessions[chatJid];
+        deleteSession(chatJid);
       }
       logger.error(
         { group: group.name, error: output.error },
