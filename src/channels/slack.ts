@@ -130,9 +130,10 @@ export class SlackChannel implements Channel {
             : undefined
           : await this.resolveChannelName(msg.channel);
 
-        // DMs and #mega don't require a trigger — all messages are processed.
-        // Other channels require @mention to trigger the agent.
-        const noTrigger = isDM || displayName?.toLowerCase() === 'mega-ai';
+        // #mega-ai is the main channel (elevated privileges, no trigger needed).
+        // DMs also don't require a trigger. Everything else needs @mention.
+        const isMegaAi = displayName?.toLowerCase() === 'mega-ai';
+        const noTrigger = isDM || isMegaAi;
 
         this.opts.registerGroup(baseJid, {
           name: displayName || msg.channel,
@@ -140,7 +141,7 @@ export class SlackChannel implements Channel {
           trigger: `@${ASSISTANT_NAME}`,
           added_at: new Date().toISOString(),
           requiresTrigger: !noTrigger,
-          isMain: true,
+          isMain: isMegaAi,
         });
         logger.info(
           { jid: baseJid, name: displayName, folder: mainFolder, isDM },
