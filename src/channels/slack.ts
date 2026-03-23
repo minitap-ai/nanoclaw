@@ -89,7 +89,18 @@ export class SlackChannel implements Channel {
       // After filtering, event is either GenericMessageEvent or BotMessageEvent
       const msg = event as HandledMessageEvent;
 
-      if (!msg.text) return;
+      // Build content: use msg.text, or describe attached files if no text
+      const files = (msg as unknown as Record<string, unknown>).files as
+        | Array<{ name?: string; mimetype?: string; url_private?: string }>
+        | undefined;
+
+      let text = msg.text || '';
+      if (!text && files?.length) {
+        text = files
+          .map((f) => `[file: ${f.name || 'attachment'}]`)
+          .join(' ');
+      }
+      if (!text) return;
 
       // Determine JID: thread replies get their own isolated JID so they
       // have separate context and the agent replies in the thread.
@@ -114,7 +125,7 @@ export class SlackChannel implements Channel {
       const groups = this.opts.registeredGroups();
       if (!groups[baseJid]) {
         const isBotMentioned =
-          this.botUserId && msg.text?.includes(`<@${this.botUserId}>`);
+          this.botUserId && text.includes(`<@${this.botUserId}>`);
         const isDM = msg.channel_type === 'im';
         if (!isBotMentioned && !isDM) return;
 
@@ -188,7 +199,7 @@ export class SlackChannel implements Channel {
       // Translate Slack <@UBOTID> mentions into TRIGGER_PATTERN format.
       // Slack encodes @mentions as <@U12345>, which won't match TRIGGER_PATTERN
       // (e.g., ^@<ASSISTANT_NAME>\b), so we prepend the trigger when the bot is @mentioned.
-      let content = msg.text;
+      let content = text;
       if (this.botUserId && !isBotMessage) {
         const mentionPattern = `<@${this.botUserId}>`;
         if (
