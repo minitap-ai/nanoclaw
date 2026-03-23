@@ -1,0 +1,39 @@
+name: Deploy 🚀
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to VM
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          fingerprint: ${{ secrets.VM_HOST_FINGERPRINT }}
+          envs: DOTENV,DEPLOY_DIR,GITHUB_SHA
+          script: |
+            set +x
+            cd "$DEPLOY_DIR"
+            install -m 600 /dev/null .env
+            printf '%s\n' "$DOTENV" > .env
+            unset DOTENV
+            git fetch --prune origin
+            git reset --hard "$GITHUB_SHA"
+            sg docker -c '
+              docker build -t nanoclaw:latest . &&
+              docker build -t nanoclaw-agent:latest -f container/Dockerfile container/ &&
+              docker compose up -d --remove-orphans
+            '
+        env:
+          DOTENV: ${{ secrets.DOTENV }}
+          DEPLOY_DIR: ${{ vars.DEPLOY_DIR || '~/nanoclaw' }}
+          GITHUB_SHA: ${{ github.sha }}
