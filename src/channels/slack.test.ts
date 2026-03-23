@@ -292,11 +292,12 @@ describe('SlackChannel', () => {
       const event = createMessageEvent({
         subtype: 'bot_message',
         botId: 'B_MY_BOT',
+        user: 'U_BOT_123', // matches botUserId
         text: 'Bot response',
       });
       await triggerMessageEvent(event);
 
-      // Has bot_id so should be marked as bot message
+      // Has matching user so should be marked as our bot message
       expect(opts.onMessage).toHaveBeenCalledWith(
         'slack:C0123456789',
         expect.objectContaining({
@@ -606,10 +607,11 @@ describe('SlackChannel', () => {
         text: 'Echo: <@U_BOT_123>',
         subtype: 'bot_message',
         botId: 'B_MY_BOT',
+        user: 'U_BOT_123', // matches botUserId — our bot
       });
       await triggerMessageEvent(event);
 
-      // Bot messages skip mention translation
+      // Our bot messages skip mention translation
       expect(opts.onMessage).toHaveBeenCalledWith(
         'slack:C0123456789',
         expect.objectContaining({

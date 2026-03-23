@@ -197,10 +197,7 @@ export class SlackChannel implements Channel {
         senderName = ASSISTANT_NAME;
       } else if (isAnyBot) {
         // Other bots: use bot profile name or fall back to bot_id
-        senderName =
-          (msg as BotMessageEvent).username ||
-          msg.bot_id ||
-          'bot';
+        senderName = (msg as BotMessageEvent).username || msg.bot_id || 'bot';
       } else {
         senderName =
           (msg.user ? await this.resolveUserName(msg.user) : undefined) ||
