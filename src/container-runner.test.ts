@@ -56,9 +56,15 @@ vi.mock('./mount-security.js', () => ({
 
 // Mock group-folder
 vi.mock('./group-folder.js', () => ({
-  resolveGroupFolderPath: vi.fn((folder: string) => `/tmp/nanoclaw-test-groups/${folder}`),
-  resolveGroupIpcPath: vi.fn((folder: string) => `/tmp/nanoclaw-test-data/ipc/${folder}`),
-  resolveChannelIpcPath: vi.fn((jid: string) => `/tmp/nanoclaw-test-data/ipc/${jid}`),
+  resolveGroupFolderPath: vi.fn(
+    (folder: string) => `/tmp/nanoclaw-test-groups/${folder}`,
+  ),
+  resolveGroupIpcPath: vi.fn(
+    (folder: string) => `/tmp/nanoclaw-test-data/ipc/${folder}`,
+  ),
+  resolveChannelIpcPath: vi.fn(
+    (jid: string) => `/tmp/nanoclaw-test-data/ipc/${jid}`,
+  ),
 }));
 
 // Mock container-runtime
@@ -66,7 +72,10 @@ vi.mock('./container-runtime.js', () => ({
   CONTAINER_HOST_GATEWAY: 'host.docker.internal',
   CONTAINER_RUNTIME_BIN: 'docker',
   hostGatewayArgs: vi.fn(() => []),
-  readonlyMountArgs: vi.fn((host: string, container: string) => ['-v', `${host}:${container}:ro`]),
+  readonlyMountArgs: vi.fn((host: string, container: string) => [
+    '-v',
+    `${host}:${container}:ro`,
+  ]),
   stopContainer: vi.fn((name: string) => `docker stop ${name}`),
 }));
 
