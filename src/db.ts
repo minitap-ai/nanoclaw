@@ -93,6 +93,15 @@ function createSchema(database: Database.Database): void {
     /* column already exists */
   }
 
+  // Add updated_at column to sessions for TTL-based rotation
+  try {
+    database.exec(
+      `ALTER TABLE sessions ADD COLUMN updated_at TEXT NOT NULL DEFAULT (datetime('now'))`,
+    );
+  } catch {
+    /* column already exists */
+  }
+
   // Add is_bot_message column if it doesn't exist (migration for existing DBs)
   try {
     database.exec(
@@ -585,8 +594,20 @@ export function getSession(groupFolder: string): string | undefined {
 
 export function setSession(groupFolder: string, sessionId: string): void {
   db.prepare(
-    'INSERT OR REPLACE INTO sessions (group_folder, session_id) VALUES (?, ?)',
+    `INSERT OR REPLACE INTO sessions (group_folder, session_id, updated_at) VALUES (?, ?, datetime('now'))`,
   ).run(groupFolder, sessionId);
+}
+
+export function isSessionStale(
+  groupFolder: string,
+  maxAgeDays: number,
+): boolean {
+  const row = db
+    .prepare('SELECT updated_at FROM sessions WHERE group_folder = ?')
+    .get(groupFolder) as { updated_at: string } | undefined;
+  if (!row?.updated_at) return true;
+  const age = Date.now() - new Date(row.updated_at + 'Z').getTime();
+  return age > maxAgeDays * 24 * 60 * 60 * 1000;
 }
 
 export function deleteSession(groupFolder: string): void {

@@ -6,6 +6,7 @@ import {
   CREDENTIAL_PROXY_PORT,
   IDLE_TIMEOUT,
   POLL_INTERVAL,
+  SESSION_MAX_AGE_DAYS,
   TIMEZONE,
   TRIGGER_PATTERN,
 } from './config.js';
@@ -40,6 +41,7 @@ import {
   getRouterState,
   initDatabase,
   deleteSession,
+  isSessionStale,
   setRegisteredGroup,
   setRouterState,
   setSession,
@@ -307,7 +309,19 @@ async function runAgent(
   onOutput?: (output: ContainerOutput) => Promise<void>,
 ): Promise<'success' | 'error'> {
   const isMain = group.isMain === true;
-  const sessionId = sessions[group.folder];
+  let sessionId: string | undefined = sessions[group.folder];
+
+  // Auto-rotate stale sessions to prevent context rot (compacted transcripts
+  // carrying outdated identity, capabilities, or instructions).
+  if (sessionId && isSessionStale(group.folder, SESSION_MAX_AGE_DAYS)) {
+    logger.info(
+      { group: group.name, folder: group.folder },
+      'Session expired (TTL), starting fresh',
+    );
+    delete sessions[group.folder];
+    deleteSession(group.folder);
+    sessionId = undefined;
+  }
 
   // Update tasks snapshot for container to read (filtered by group)
   const tasks = getAllTasks();
