@@ -47,8 +47,9 @@ export const HOST_GROUPS_DIR = path.resolve(HOST_PROJECT_ROOT, 'groups');
 export const HOST_DATA_DIR = path.resolve(HOST_PROJECT_ROOT, 'data');
 export const HOST_PROJECT_DIR = HOST_PROJECT_ROOT;
 
+export const INSTANCE_NAME = process.env.INSTANCE_NAME || 'nanoclaw';
 export const CONTAINER_IMAGE =
-  process.env.CONTAINER_IMAGE || 'nanoclaw-agent:latest';
+  process.env.CONTAINER_IMAGE || `${INSTANCE_NAME}-agent:latest`;
 export const CONTAINER_TIMEOUT = parseInt(
   process.env.CONTAINER_TIMEOUT || '1800000',
   10,

@@ -17,6 +17,7 @@ import {
   HOST_GROUPS_DIR,
   HOST_PROJECT_DIR,
   IDLE_TIMEOUT,
+  INSTANCE_NAME,
   TIMEZONE,
 } from './config.js';
 import {
@@ -332,7 +333,7 @@ export async function runContainerAgent(
 
   const mounts = buildVolumeMounts(group, input.isMain, input.chatJid);
   const safeName = input.chatJid.replace(/[^a-zA-Z0-9-]/g, '-');
-  const containerName = `nanoclaw-${safeName}-${Date.now()}`;
+  const containerName = `${INSTANCE_NAME}-${safeName}-${Date.now()}`;
   const containerArgs = buildContainerArgs(mounts, containerName);
 
   logger.debug(
