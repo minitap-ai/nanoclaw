@@ -22,7 +22,10 @@ jobs:
           fingerprint: ${{ secrets.VM_HOST_FINGERPRINT }}
           envs: DOTENV,DEPLOY_DIR,GITHUB_SHA
           script: |
-            set +x
+            set -eo pipefail
+            export DEPLOY_DIR GITHUB_SHA DOTENV
+            sudo --preserve-env=DEPLOY_DIR,GITHUB_SHA,DOTENV -iu luc_minitap_ai bash <<'DEPLOY'
+            set -eo pipefail
             cd "$DEPLOY_DIR"
             install -m 600 /dev/null .env
             printf '%s\n' "$DOTENV" > .env
@@ -34,6 +37,8 @@ jobs:
               docker build -t nanoclaw-agent:latest -f container/Dockerfile container/ &&
               docker compose up -d --remove-orphans
             '
+            DEPLOY
+          script_stop: true
         env:
           DOTENV: ${{ secrets.DOTENV }}
           DEPLOY_DIR: ${{ vars.DEPLOY_DIR || '~/nanoclaw' }}
