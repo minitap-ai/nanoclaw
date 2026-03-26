@@ -14,8 +14,8 @@ services:
       - ./container:/app/container
       # .env file — app reads it directly via readEnvFile() for secrets
       - ./.env:/app/.env:ro
-      # Security config (mount/sender allowlists) — stored outside project root
-      - ~/.config/nanoclaw:/root/.config/nanoclaw:ro
+      # Security config (mount/sender allowlists)
+      - /opt/nanoclaw/config:/root/.config/nanoclaw:ro
     env_file:
       - .env
     environment:

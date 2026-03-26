@@ -20,26 +20,24 @@ jobs:
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
           fingerprint: ${{ secrets.VM_HOST_FINGERPRINT }}
-          envs: DOTENV,DEPLOY_DIR,GITHUB_SHA
+          envs: DOTENV,GITHUB_SHA
           script: |
             set -eo pipefail
-            export DEPLOY_DIR GITHUB_SHA DOTENV
-            sudo --preserve-env=DEPLOY_DIR,GITHUB_SHA,DOTENV -iu luc_minitap_ai bash <<'DEPLOY'
-            set -eo pipefail
+            DEPLOY_DIR=/opt/nanoclaw
+            if [ ! -d "$DEPLOY_DIR/.git" ]; then
+              git init "$DEPLOY_DIR"
+              git -C "$DEPLOY_DIR" remote add origin https://github.com/${{ github.repository }}.git
+            fi
             cd "$DEPLOY_DIR"
             install -m 600 /dev/null .env
             printf '%s\n' "$DOTENV" > .env
             unset DOTENV
             git fetch --prune origin
             git reset --hard "$GITHUB_SHA"
-            sg docker -c '
-              docker build -t nanoclaw:latest . &&
-              docker build -t nanoclaw-agent:latest -f container/Dockerfile container/ &&
-              docker compose up -d --remove-orphans
-            '
-            DEPLOY
+            docker build -t nanoclaw:latest .
+            docker build -t nanoclaw-agent:latest -f container/Dockerfile container/
+            docker compose up -d --remove-orphans
           script_stop: true
         env:
           DOTENV: ${{ secrets.DOTENV }}
-          DEPLOY_DIR: ${{ vars.DEPLOY_DIR || '~/nanoclaw' }}
           GITHUB_SHA: ${{ github.sha }}

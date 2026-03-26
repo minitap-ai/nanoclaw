@@ -8,48 +8,50 @@ Single Node.js process with skill-based channel system. Channels (WhatsApp, Tele
 
 ## Key Files
 
-| File | Purpose |
-|------|---------|
-| `src/index.ts` | Orchestrator: state, message loop, agent invocation |
-| `src/channels/registry.ts` | Channel registry (self-registration at startup) |
-| `src/ipc.ts` | IPC watcher and task processing |
-| `src/router.ts` | Message formatting and outbound routing |
-| `src/config.ts` | Trigger pattern, paths, intervals |
-| `src/container-runner.ts` | Spawns agent containers with mounts |
-| `src/task-scheduler.ts` | Runs scheduled tasks |
-| `src/db.ts` | SQLite operations |
-| `groups/{name}/CLAUDE.md` | Per-group memory (isolated) |
+| File                                | Purpose                                                    |
+| ----------------------------------- | ---------------------------------------------------------- |
+| `src/index.ts`                      | Orchestrator: state, message loop, agent invocation        |
+| `src/channels/registry.ts`          | Channel registry (self-registration at startup)            |
+| `src/ipc.ts`                        | IPC watcher and task processing                            |
+| `src/router.ts`                     | Message formatting and outbound routing                    |
+| `src/config.ts`                     | Trigger pattern, paths, intervals                          |
+| `src/container-runner.ts`           | Spawns agent containers with mounts                        |
+| `src/task-scheduler.ts`             | Runs scheduled tasks                                       |
+| `src/db.ts`                         | SQLite operations                                          |
+| `groups/{name}/CLAUDE.md`           | Per-group memory (isolated)                                |
 | `container/skills/agent-browser.md` | Browser automation tool (available to all agents via Bash) |
 
 ## Skills
 
-| Skill | When to Use |
-|-------|-------------|
-| `/setup` | First-time installation, authentication, service configuration |
-| `/customize` | Adding channels, integrations, changing behavior |
-| `/debug` | Container issues, logs, troubleshooting |
-| `/update-nanoclaw` | Bring upstream NanoClaw updates into a customized install |
-| `/qodo-pr-resolver` | Fetch and fix Qodo PR review issues interactively or in batch |
-| `/get-qodo-rules` | Load org- and repo-level coding rules from Qodo before code tasks |
+| Skill               | When to Use                                                       |
+| ------------------- | ----------------------------------------------------------------- |
+| `/setup`            | First-time installation, authentication, service configuration    |
+| `/customize`        | Adding channels, integrations, changing behavior                  |
+| `/debug`            | Container issues, logs, troubleshooting                           |
+| `/update-nanoclaw`  | Bring upstream NanoClaw updates into a customized install         |
+| `/qodo-pr-resolver` | Fetch and fix Qodo PR review issues interactively or in batch     |
+| `/get-qodo-rules`   | Load org- and repo-level coding rules from Qodo before code tasks |
 
 ## Deployment
 
-Production runs on a GCP VM (`nanoclaw` in `europe-west9-a`, project `minitap-sandbox`) as a Docker container at `~/nanoclaw`.
+Production runs on a GCP VM (`nanoclaw` in `europe-west9-a`, project `minitap-sandbox`) as a Docker container at `/opt/nanoclaw`.
 
 Architecture: NanoClaw host container spawns agent containers as siblings via Docker socket mount (not Docker-in-Docker). `HOST_PROJECT_ROOT` env var maps container paths to host paths for volume mounts.
 
+Deployments are automated via GitHub Actions on push to `main`. See `.github/workflows/deploy.yml`.
+
 ```bash
-# Deploy changes
-gcloud compute ssh luc_minitap_ai@nanoclaw --zone=europe-west9-a --project=minitap-sandbox --command="cd ~/nanoclaw && sudo git pull && sg docker -c 'docker build -t nanoclaw:latest . && docker compose down && docker compose up -d'"
+# Manual deploy (prefer pushing to main instead)
+gcloud compute ssh luc_minitap_ai@nanoclaw --zone=europe-west9-a --project=minitap-sandbox --command="cd /opt/nanoclaw && sudo git pull && sudo docker build -t nanoclaw:latest . && sudo docker compose up -d --remove-orphans"
 
 # Rebuild agent container
-gcloud compute ssh luc_minitap_ai@nanoclaw --zone=europe-west9-a --project=minitap-sandbox --command="cd ~/nanoclaw && sg docker -c 'docker build -t nanoclaw-agent:latest -f container/Dockerfile container/'"
+gcloud compute ssh luc_minitap_ai@nanoclaw --zone=europe-west9-a --project=minitap-sandbox --command="cd /opt/nanoclaw && sudo docker build -t nanoclaw-agent:latest -f container/Dockerfile container/"
 
 # Check logs
-gcloud compute ssh luc_minitap_ai@nanoclaw --zone=europe-west9-a --project=minitap-sandbox --command="sg docker -c 'docker logs nanoclaw --tail 30'"
+gcloud compute ssh luc_minitap_ai@nanoclaw --zone=europe-west9-a --project=minitap-sandbox --command="sudo docker logs nanoclaw --tail 30"
 
 # Restart
-gcloud compute ssh luc_minitap_ai@nanoclaw --zone=europe-west9-a --project=minitap-sandbox --command="sg docker -c 'cd ~/nanoclaw && docker compose restart'"
+gcloud compute ssh luc_minitap_ai@nanoclaw --zone=europe-west9-a --project=minitap-sandbox --command="cd /opt/nanoclaw && sudo docker compose restart"
 ```
 
 Key files: `Dockerfile` (host image), `docker-compose.yml` (compose config), `.dockerignore`.
