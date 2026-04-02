@@ -14,6 +14,8 @@ services:
       - ./container:/app/container
       # .env file — app reads it directly via readEnvFile() for secrets
       - ./.env:/app/.env:ro
+      # GitHub App private key for installation token generation
+      - ./secrets:/app/secrets:ro
       # Security config (mount/sender allowlists) — stored outside project root
       - ~/.config/nanoclaw:/root/.config/nanoclaw:ro
     env_file:

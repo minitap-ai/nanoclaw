@@ -6,6 +6,8 @@ import { ChildProcess, exec, spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 
+import { getGitHubToken } from './github-app.js';
+
 import {
   CONTAINER_IMAGE,
   CONTAINER_MAX_OUTPUT_SIZE,
@@ -249,10 +251,10 @@ function buildVolumeMounts(
   return mounts;
 }
 
-function buildContainerArgs(
+async function buildContainerArgs(
   mounts: VolumeMount[],
   containerName: string,
-): string[] {
+): Promise<string[]> {
   const args: string[] = ['run', '-i', '--rm', '--name', containerName];
 
   // Pass host timezone so container's local time matches the user's
@@ -288,10 +290,19 @@ function buildContainerArgs(
     'TELEGRAM_',
     'DISCORD_',
     'GMAIL_',
+    'GITHUB_APP_',
   ];
   for (const [key, value] of Object.entries(envPassthrough)) {
     if (BLOCKED_ENV_PREFIXES.some((p) => key.startsWith(p))) continue;
+    // Skip static GITHUB_TOKEN when GitHub App is configured (injected below)
+    if (key === 'GITHUB_TOKEN' && process.env.GITHUB_APP_ID) continue;
     args.push('-e', `${key}=${value}`);
+  }
+
+  // Inject fresh GitHub App installation token if configured
+  const ghToken = await getGitHubToken();
+  if (ghToken) {
+    args.push('-e', `GITHUB_TOKEN=${ghToken}`);
   }
 
   // Runtime-specific args for host gateway resolution
@@ -334,7 +345,7 @@ export async function runContainerAgent(
   const mounts = buildVolumeMounts(group, input.isMain, input.chatJid);
   const safeName = input.chatJid.replace(/[^a-zA-Z0-9-]/g, '-');
   const containerName = `${INSTANCE_NAME}-${safeName}-${Date.now()}`;
-  const containerArgs = buildContainerArgs(mounts, containerName);
+  const containerArgs = await buildContainerArgs(mounts, containerName);
 
   logger.debug(
     {
