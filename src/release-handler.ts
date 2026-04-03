@@ -123,8 +123,10 @@ async function fetchReleaseDiffs(): Promise<ReleaseDiffsResult> {
         // Compare release tag with default branch
         let compare: any;
         try {
+          const encodedTag = encodeURIComponent(tag);
+          const encodedBranch = encodeURIComponent(defaultBranch);
           compare = await githubApi(
-            `/repos/${org}/${repo.name}/compare/${tag}...${defaultBranch}`,
+            `/repos/${org}/${repo.name}/compare/${encodedTag}...${encodedBranch}`,
             token,
           );
         } catch {
@@ -222,12 +224,20 @@ export async function handleReleaseIpc(
     return false;
   }
 
+  const requestId =
+    typeof data.requestId === 'string' ? data.requestId : undefined;
+
   if (!isMain) {
     logger.warn({ sourceGroup, type }, 'Release tools blocked: not main group');
+    if (requestId) {
+      writeIpcResult(dataDir, sourceGroup, requestId, {
+        success: false,
+        message: 'Only the main group can fetch release diffs.',
+      });
+    }
     return true;
   }
 
-  const requestId = data.requestId as string;
   if (!requestId) {
     logger.warn({ type }, 'Release tools blocked: missing requestId');
     return true;
