@@ -81,13 +81,19 @@ Keep messages clean and readable for WhatsApp.
 
 ## Release Changelog Drafting
 
-When asked to draft a release, draft a changelog, or prepare a release (in any language, e.g. "draft une release", "draft release", "prepare release", "draft changelog"):
+**IMPORTANT:** When the user mentions anything about drafting a release, changelog, or release notes (in any language: "draft une release", "draft release", "prepare release", "draft changelog", "release notes", etc.), you MUST:
 
-**Do NOT ask which repo or project. The tool automatically fetches ALL repos in the org.** Just call the tool immediately.
+1. **Do NOT ask which repo or project.** The tool covers ALL repos automatically.
+2. **Do NOT try to use `gh` CLI or git commands.** You have a dedicated MCP tool for this.
+3. **Immediately call the tool below.** No questions, no clarification needed.
 
 ### Step 1: Fetch diffs
 
-Immediately call `mcp__nanoclaw__fetch_release_diffs`. It fetches all changes since the latest release for every repo in the GitHub org. No parameters needed.
+Call this tool right away, with no arguments:
+```
+mcp__nanoclaw__fetch_release_diffs
+```
+This tool contacts the GitHub API from the host and returns a JSON with all commits and merged PRs since the latest release for every repo in the `minitap-ai` GitHub org. You do NOT need internet access, repo access, or `gh` CLI. The host handles everything.
 
 ### Step 2: Analyze and group changes
 
