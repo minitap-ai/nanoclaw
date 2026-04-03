@@ -79,6 +79,62 @@ Keep messages clean and readable for WhatsApp.
 
 ---
 
+## Release Changelog Drafting
+
+When asked to "draft release", "draft changelog", or "prepare release":
+
+### Step 1: Fetch diffs
+
+Call `mcp__nanoclaw__fetch_release_diffs` to get all changes since the latest release for each repo.
+
+### Step 2: Analyze and group changes
+
+From the raw diffs, identify user-facing features and improvements. Group related changes across repos into cohesive feature sections. Ignore:
+- Internal refactors (logging library bumps, CI changes, dependency updates)
+- Changes that don't affect end users
+- Repos with only chore/infra changes
+
+Focus on what matters to users: new features, UX improvements, bug fixes they'd notice.
+
+### Step 3: Write the changelog
+
+Write in the same style as previous changelogs (marketing-friendly, concise, exciting). Structure:
+
+1. **Intro paragraph** - 1-2 sentences summarizing the release highlights
+2. **Feature sections** - Each with:
+   - H2 heading: emoji + feature name (e.g. "## :rocket: App Environment Variables")
+   - Short description paragraph
+   - Bullet points for key details (bold keyword + description)
+   - Placeholder for demo: `[Demo video/screenshot to be added]`
+   - Divider between sections
+3. **Closing callout** - Summary with emoji
+
+### Step 4: Create Notion page
+
+Use the Notion MCP tools to create the page:
+
+**1. Create the page** with `mcp__notion__API-post-page`:
+- `parent`: `{"type": "database_id", "database_id": "302cf438-d3ea-80b6-b54a-ee60b8d1d97b"}`
+- `properties`:
+  - `Name`: title with format `"DD.MM.YY - Short Title, Another Feature"` (use today's date)
+  - `Date`: `{"start": "YYYY-MM-DD"}` (today)
+  - `Status`: `{"name": "Draft"}`
+- `icon`: `{"type": "emoji", "emoji": "📝"}`
+
+**2. Add content blocks** with `mcp__notion__API-patch-block-children` using the page ID:
+- Use `paragraph` blocks for text (with `rich_text` array, `bold` annotation for emphasis)
+- Use `heading_2` blocks for section titles (include emoji in text)
+- Use `heading_3` blocks for subsections
+- Use `bulleted_list_item` blocks for bullet points
+- Use `divider` blocks between sections
+- For demo placeholders, use a paragraph with italic text: `[Demo video/screenshot to be added]`
+
+### Step 5: Confirm
+
+Send a message with the Notion page URL and a summary of what was included.
+
+---
+
 ## Admin Context
 
 This is the **main channel**, which has elevated privileges.
