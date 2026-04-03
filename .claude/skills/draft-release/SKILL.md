@@ -1,6 +1,6 @@
 ---
-name: draft-release
-description: Draft a release changelog by fetching diffs from all GitHub repos since their latest release and creating a Notion page. Triggers on "draft release", "draft changelog", "prepare release", "changelog".
+name: draft-changelog
+description: Draft a changelog by fetching diffs from all GitHub repos since their latest release and creating a Notion page. Triggers on "draft changelog", "changelog", "draft un changelog", "écris le changelog".
 ---
 
 # Draft Release Changelog
