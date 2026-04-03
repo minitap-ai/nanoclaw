@@ -138,8 +138,10 @@ async function fetchReleaseDiffs(): Promise<ReleaseDiffsResult> {
           latestRelease.published_at || latestRelease.created_at;
         let mergedPRs: any[] = [];
         try {
+          const encodedRepo = encodeURIComponent(`${org}/${repo.name}`);
+          const dateStr = releaseDate.split('T')[0];
           const prSearch = (await githubApi(
-            `/search/issues?q=repo:${org}/${repo.name}+is:pr+is:merged+merged:>${releaseDate.split('T')[0]}&sort=updated&order=desc`,
+            `/search/issues?q=repo:${encodedRepo}+is:pr+is:merged+merged:>${dateStr}&sort=updated&order=desc`,
             token,
           )) as any;
           mergedPRs = prSearch.items || [];

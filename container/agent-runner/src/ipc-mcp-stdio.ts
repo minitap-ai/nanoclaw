@@ -536,7 +536,7 @@ Use available_groups.json to find the JID for a group. The folder name must be c
 
 // --- Release Drafting Tools ---
 
-const RELEASE_RESULTS_DIR = path.join(IPC_DIR, 'release_results');
+const RELEASE_RESULTS_DIR = path.join(IPC_DIR, groupFolder, 'release_results');
 
 function waitForReleaseResult(
   requestId: string,
