@@ -81,11 +81,13 @@ Keep messages clean and readable for WhatsApp.
 
 ## Release Changelog Drafting
 
-When asked to "draft release", "draft changelog", or "prepare release":
+When asked to draft a release, draft a changelog, or prepare a release (in any language, e.g. "draft une release", "draft release", "prepare release", "draft changelog"):
+
+**Do NOT ask which repo or project. The tool automatically fetches ALL repos in the org.** Just call the tool immediately.
 
 ### Step 1: Fetch diffs
 
-Call `mcp__nanoclaw__fetch_release_diffs` to get all changes since the latest release for each repo.
+Immediately call `mcp__nanoclaw__fetch_release_diffs`. It fetches all changes since the latest release for every repo in the GitHub org. No parameters needed.
 
 ### Step 2: Analyze and group changes
 
