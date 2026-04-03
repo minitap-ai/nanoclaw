@@ -8,7 +8,6 @@ import { AvailableGroup } from './container-runner.js';
 import { createTask, deleteTask, getTaskById, updateTask } from './db.js';
 import { isValidGroupFolder } from './group-folder.js';
 import { logger } from './logger.js';
-import { handleReleaseIpc } from './release-handler.js';
 import { RegisteredGroup } from './types.js';
 
 export interface IpcDeps {
@@ -463,17 +462,7 @@ export async function processTaskIpc(
       }
       break;
 
-    default: {
-      const handled = await handleReleaseIpc(
-        data as Record<string, unknown>,
-        sourceGroup,
-        isMain,
-        DATA_DIR,
-      );
-      if (!handled) {
-        logger.warn({ type: data.type }, 'Unknown IPC task type');
-      }
-      break;
-    }
+    default:
+      logger.warn({ type: data.type }, 'Unknown IPC task type');
   }
 }
