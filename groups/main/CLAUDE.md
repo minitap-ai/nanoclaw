@@ -79,9 +79,9 @@ Keep messages clean and readable for WhatsApp.
 
 ---
 
-## Release Changelog Drafting
+## Changelog Drafting
 
-**IMPORTANT:** When the user mentions anything about drafting a release, changelog, or release notes (in any language: "draft une release", "draft release", "prepare release", "draft changelog", "release notes", etc.), you MUST:
+**IMPORTANT:** When the user mentions anything about drafting a changelog, writing a changelog, or preparing release notes (in any language: "draft un changelog", "draft changelog", "écris le changelog", "prepare le changelog", "changelog", "release notes", etc.), you MUST:
 
 1. **Do NOT ask which repo or project.** The tool covers ALL repos automatically.
 2. **Do NOT try to use `gh` CLI or git commands.** You have a dedicated MCP tool for this.

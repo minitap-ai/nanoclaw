@@ -576,10 +576,10 @@ server.tool(
   'fetch_release_diffs',
   `Fetch the differences between the latest release and main branch for all repos in the GitHub org.
 Returns a JSON object with commits and merged PRs per repo since their latest release.
-Use this to draft a release changelog. Main group only.
+Use this when the user asks to draft a changelog. Main group only.
 
 After receiving the diffs, write a user-facing changelog and create it as a Notion page using the Notion MCP tools.
-See the "Release Changelog Drafting" section in CLAUDE.md for formatting instructions.`,
+See the "Changelog Drafting" section in CLAUDE.md for formatting instructions.`,
   {},
   async () => {
     if (!isMain) {
