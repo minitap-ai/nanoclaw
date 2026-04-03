@@ -78,17 +78,17 @@ Keep messages clean and readable for Slack.
 
 **IMPORTANT:** When the user mentions anything about drafting a changelog, writing a changelog, or preparing release notes (in any language: "draft un changelog", "draft changelog", "écris le changelog", "prepare le changelog", "changelog", "release notes", etc.), you MUST:
 
-1. **Do NOT ask which repo or project.** The tool covers ALL repos automatically.
-2. **Do NOT try to use `gh` CLI or git commands.** You have a dedicated MCP tool for this.
-3. **Immediately call the tool below.** No questions, no clarification needed.
+1. **Do NOT ask which repo or project.** The script covers ALL repos automatically.
+2. **Do NOT try to use `gh` CLI or git commands.** You have a dedicated script for this.
+3. **Immediately run the command below.** No questions, no clarification needed.
 
 ### Step 1: Fetch diffs
 
-Call this tool right away, with no arguments:
+Run this command right away:
+```bash
+node /app/scripts/fetch-release-diffs.mjs
 ```
-mcp__nanoclaw__fetch_release_diffs
-```
-This tool contacts the GitHub API from the host and returns a JSON with all commits and merged PRs since the latest release for every repo in the `minitap-ai` GitHub org. You do NOT need internet access, repo access, or `gh` CLI. The host handles everything.
+This script calls the GitHub API and returns JSON with all commits and merged PRs since the latest release for every repo in the `minitap-ai` GitHub org. It reads `GITHUB_TOKEN` from the environment automatically.
 
 ### Step 2: Analyze and group changes
 
