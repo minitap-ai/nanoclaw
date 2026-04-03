@@ -227,17 +227,6 @@ export async function handleReleaseIpc(
   const requestId =
     typeof data.requestId === 'string' ? data.requestId : undefined;
 
-  if (!isMain) {
-    logger.warn({ sourceGroup, type }, 'Release tools blocked: not main group');
-    if (requestId) {
-      writeIpcResult(dataDir, sourceGroup, requestId, {
-        success: false,
-        message: 'Only the main group can fetch release diffs.',
-      });
-    }
-    return true;
-  }
-
   if (!requestId) {
     logger.warn({ type }, 'Release tools blocked: missing requestId');
     return true;
